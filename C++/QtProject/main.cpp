@@ -4,9 +4,9 @@
 
 int main(int argc, char *argv[]) {
   QCoreApplication a(argc, argv);
-  cout << "Demo of the ANMS algorithms" << endl;
+  std::cout << "Demo of the ANMS algorithms" << std::endl;
 
-  string testImgPath = "../../Images/test.png"; // Path to image
+  std::string testImgPath = "../../Images/test.png"; // Path to image
   cv::Mat testImg =
       cv::imread(testImgPath, CV_LOAD_IMAGE_GRAYSCALE); // Read the file
 
@@ -15,14 +15,14 @@ int main(int argc, char *argv[]) {
 
   int fastThresh =
       1; // Fast threshold. Usually this value is set to be in range [10,35]
-  vector<cv::KeyPoint> keyPoints; // vector to keep detected KeyPoints
+  std::vector<cv::KeyPoint> keyPoints; // vector to keep detected KeyPoints
 #if CV_MAJOR_VERSION < 3          // If you are using OpenCV 2
   cv::FastFeatureDetector fastDetector(fastThresh, true);
   fastDetector.detect(testImg, keyPoints);
 #else
   cv::FAST(testImg, keyPoints, fastThresh, true);
 #endif
-  cout << "Number of points detected : " << keyPoints.size() << endl;
+  std::cout << "Number of points detected : " << keyPoints.size() << std::endl;
 
   cv::Mat fastDetectionResults; // draw FAST detections
   cv::drawKeypoints(testImg, keyPoints, fastDetectionResults,
@@ -31,13 +31,13 @@ int main(int argc, char *argv[]) {
   cv::imshow("FAST Detections", fastDetectionResults);
 
   // Sorting keypoints by deacreasing order of strength
-  vector<float> responseVector;
+  std::vector<float> responseVector;
   for (unsigned int i = 0; i < keyPoints.size(); i++)
     responseVector.push_back(keyPoints[i].response);
-  vector<int> Indx(responseVector.size());
+  std::vector<int> Indx(responseVector.size());
   std::iota(std::begin(Indx), std::end(Indx), 0);
   cv::sortIdx(responseVector, Indx, CV_SORT_DESCENDING);
-  vector<cv::KeyPoint> keyPointsSorted;
+  std::vector<cv::KeyPoint> keyPointsSorted;
   for (unsigned int i = 0; i < keyPoints.size(); i++)
     keyPointsSorted.push_back(keyPoints[Indx[i]]);
 
@@ -47,63 +47,63 @@ int main(int argc, char *argv[]) {
 
   float tolerance = 0.1; // tolerance of the number of return points
 
-  cout << "\nStart TopN" << endl;
+  std::cout << "\nStart TopN" << std::endl;
   clock_t topNStart = clock();
-  vector<cv::KeyPoint> topnKP = topN(keyPointsSorted, numRetPoints);
+  std::vector<cv::KeyPoint> topnKP = topN(keyPointsSorted, numRetPoints);
   clock_t topNTotalTime =
       double(clock() - topNStart) * 1000 / (double)CLOCKS_PER_SEC;
-  cout << "Finish TopN in " << topNTotalTime << " miliseconds." << endl;
+  std::cout << "Finish TopN in " << topNTotalTime << " miliseconds." << std::endl;
 
 #if CV_MAJOR_VERSION < 3 // Bucketing is no longer available in opencv3
-  cout << "\nStart GridFAST" << endl;
+  std::cout << "\nStart GridFAST" << std::endl;
   clock_t gridFASTStart = clock();
-  vector<cv::KeyPoint> gridFASTKP =
+  std::vector<cv::KeyPoint> gridFASTKP =
       gridFAST(testImg, numRetPoints, 7,
                4); // change gridRows=7 and gridCols=4 parameters if necessary
   clock_t gridFASTTotalTime =
       double(clock() - gridFASTStart) * 1000 / (double)CLOCKS_PER_SEC;
-  cout << "Finish GridFAST in " << gridFASTTotalTime << " miliseconds." << endl;
+  std::cout << "Finish GridFAST in " << gridFASTTotalTime << " miliseconds." << std::endl;
 #endif
 
-  cout << "\nBrown ANMS" << endl;
+  std::cout << "\nBrown ANMS" << std::endl;
   clock_t brownStart = clock();
-  vector<cv::KeyPoint> brownKP = brownANMS(keyPointsSorted, numRetPoints);
+  std::vector<cv::KeyPoint> brownKP = brownANMS(keyPointsSorted, numRetPoints);
   clock_t brownTotalTime =
       double(clock() - brownStart) * 1000 / (double)CLOCKS_PER_SEC;
-  cout << "Brown ANMS " << brownTotalTime << " miliseconds." << endl;
+  std::cout << "Brown ANMS " << brownTotalTime << " miliseconds." << std::endl;
 
-  cout << "\nSDC ANMS" << endl;
+  std::cout << "\nSDC ANMS" << std::endl;
   clock_t sdcStart = clock();
-  vector<cv::KeyPoint> sdcKP =
+  std::vector<cv::KeyPoint> sdcKP =
       sdc(keyPointsSorted, numRetPoints, tolerance, testImg.cols, testImg.rows);
   clock_t sdcTotalTime =
       double(clock() - sdcStart) * 1000 / (double)CLOCKS_PER_SEC;
-  cout << "SDC ANMS " << sdcTotalTime << " miliseconds." << endl;
+  std::cout << "SDC ANMS " << sdcTotalTime << " miliseconds." << std::endl;
 
-  cout << "\nStart K-d Tree ANMS" << endl;
+  std::cout << "\nStart K-d Tree ANMS" << std::endl;
   clock_t kdtreeStart = clock();
-  vector<cv::KeyPoint> kdtreeKP = kdTree(keyPointsSorted, numRetPoints,
+  std::vector<cv::KeyPoint> kdtreeKP = kdTree(keyPointsSorted, numRetPoints,
                                          tolerance, testImg.cols, testImg.rows);
   clock_t kdtreeTotalTime =
       double(clock() - kdtreeStart) * 1000 / (double)CLOCKS_PER_SEC;
-  cout << "Finish K-d Tree ANMS " << kdtreeTotalTime << " miliseconds." << endl;
+  std::cout << "Finish K-d Tree ANMS " << kdtreeTotalTime << " miliseconds." << std::endl;
 
-  cout << "\nStart Range Tree ANMS" << endl;
+  std::cout << "\nStart Range Tree ANMS" << std::endl;
   clock_t rangetreeStart = clock();
-  vector<cv::KeyPoint> rangetreeKP = rangeTree(
+  std::vector<cv::KeyPoint> rangetreeKP = rangeTree(
       keyPointsSorted, numRetPoints, tolerance, testImg.cols, testImg.rows);
   clock_t rangetreeTotalTime =
       double(clock() - rangetreeStart) * 1000 / (double)CLOCKS_PER_SEC;
-  cout << "Finish Range Tree ANMS " << rangetreeTotalTime << " miliseconds."
-       << endl;
+  std::cout << "Finish Range Tree ANMS " << rangetreeTotalTime << " miliseconds."
+       << std::endl;
 
-  cout << "\nStart SSC ANMS" << endl;
+  std::cout << "\nStart SSC ANMS" << std::endl;
   clock_t sscStart = clock();
-  vector<cv::KeyPoint> sscKP =
+  std::vector<cv::KeyPoint> sscKP =
       ssc(keyPointsSorted, numRetPoints, tolerance, testImg.cols, testImg.rows);
   clock_t sscTotalTime =
       double(clock() - sscStart) * 1000 / (double)CLOCKS_PER_SEC;
-  cout << "Finish SSC ANMS " << sscTotalTime << " miliseconds." << endl;
+  std::cout << "Finish SSC ANMS " << sscTotalTime << " miliseconds." << std::endl;
 
   // results visualization
   VisualizeAll(testImg, topnKP, "TopN KeyPoints");

@@ -10,11 +10,8 @@
 #endif
 #include <stdlib.h>
 
-using namespace std;
-using namespace nanoflann;
-
-vector<cv::KeyPoint> topN(vector<cv::KeyPoint> keyPoints, int numRetPoints) {
-  vector<cv::KeyPoint> kp;
+std::vector<cv::KeyPoint> topN(std::vector<cv::KeyPoint> keyPoints, int numRetPoints) {
+  std::vector<cv::KeyPoint> kp;
   for (int i = 0; i < numRetPoints; i++)
     kp.push_back(keyPoints[i]); // simply extracting numRetPoints keyPoints
 
@@ -22,9 +19,9 @@ vector<cv::KeyPoint> topN(vector<cv::KeyPoint> keyPoints, int numRetPoints) {
 }
 
 #if CV_MAJOR_VERSION < 3 // If you are using OpenCV 2
-vector<cv::KeyPoint> gridFAST(cv::Mat Image, int numRetPoints, int gridRows,
+std::vector<cv::KeyPoint> gridFAST(cv::Mat Image, int numRetPoints, int gridRows,
                               int gridCols) {
-  vector<cv::KeyPoint> kp;
+  std::vector<cv::KeyPoint> kp;
   cv::Ptr<cv::FeatureDetector> featdetectorK =
       new cv::GridAdaptedFeatureDetector(cv::FeatureDetector::create("FAST"),
                                          numRetPoints, gridRows, gridCols);
@@ -35,15 +32,15 @@ vector<cv::KeyPoint> gridFAST(cv::Mat Image, int numRetPoints, int gridRows,
 #endif
 
 struct sort_pred {
-  bool operator()(const pair<float, int> &left, const pair<float, int> &right) {
+  bool operator()(const std::pair<float, int> &left, const std::pair<float, int> &right) {
     return left.first > right.first;
   }
 };
 
-vector<cv::KeyPoint> brownANMS(vector<cv::KeyPoint> keyPoints,
+std::vector<cv::KeyPoint> brownANMS(std::vector<cv::KeyPoint> keyPoints,
                                int numRetPoints) {
-  vector<pair<float, int>> results;
-  results.push_back(make_pair(FLT_MAX, 0));
+  std::vector<std::pair<float, int>> results;
+  results.push_back(std::make_pair(FLT_MAX, 0));
   for (unsigned int i = 1; i < keyPoints.size();
        ++i) { // for every keyPoint we get the min distance to the previously
               // visited keyPoints
@@ -52,12 +49,12 @@ vector<cv::KeyPoint> brownANMS(vector<cv::KeyPoint> keyPoints,
       float exp1 = (keyPoints[j].pt.x - keyPoints[i].pt.x);
       float exp2 = (keyPoints[j].pt.y - keyPoints[i].pt.y);
       float curDist = sqrt(exp1 * exp1 + exp2 * exp2);
-      minDist = min(curDist, minDist);
+      minDist = std::min(curDist, minDist);
     }
-    results.push_back(make_pair(minDist, i));
+    results.push_back(std::make_pair(minDist, i));
   }
   sort(results.begin(), results.end(), sort_pred()); // sorting by radius
-  vector<cv::KeyPoint> kp;
+  std::vector<cv::KeyPoint> kp;
   for (int i = 0; i < numRetPoints; ++i)
     kp.push_back(
         keyPoints[results[i].second]); // extracting numRetPoints keyPoints
@@ -65,7 +62,7 @@ vector<cv::KeyPoint> brownANMS(vector<cv::KeyPoint> keyPoints,
   return kp;
 }
 
-vector<cv::KeyPoint> sdc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
+std::vector<cv::KeyPoint> sdc(std::vector<cv::KeyPoint> keyPoints, int numRetPoints,
                          float tolerance, int cols, int rows) {
   double eps_var = 0.25; // this parameter is chosen to be the most optimal in
                          // the original paper
@@ -75,13 +72,13 @@ vector<cv::KeyPoint> sdc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
   int radius;
   int prevradius = -1;
 
-  vector<int> ResultVec;
+  std::vector<int> ResultVec;
   bool complete = false;
   unsigned int K = numRetPoints;
   unsigned int Kmin = round(K - (K * tolerance));
   unsigned int Kmax = round(K + (K * tolerance));
 
-  vector<int> result;
+  std::vector<int> result;
   result.reserve(keyPoints.size());
   while (!complete) {
     radius = low + (high - low) / 2;
@@ -95,8 +92,8 @@ vector<cv::KeyPoint> sdc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
     double c = eps_var * radius / sqrt(2); // initializing Grid
     int numCellCols = floor(cols / c);
     int numCellRows = floor(rows / c);
-    vector<vector<bool>> coveredVec(numCellRows + 1,
-                                    vector<bool>(numCellCols + 1, false));
+    std::vector<std::vector<bool>> coveredVec(numCellRows + 1,
+                                    std::vector<bool>(numCellCols + 1, false));
 
     for (unsigned int i = 0; i < keyPoints.size(); ++i) {
       int row =
@@ -136,7 +133,7 @@ vector<cv::KeyPoint> sdc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
       low = radius + 1;
   }
   // retrieve final keypoints
-  vector<cv::KeyPoint> kp;
+  std::vector<cv::KeyPoint> kp;
   for (unsigned int i = 0; i < ResultVec.size(); i++)
     kp.push_back(keyPoints[ResultVec[i]]);
 
@@ -148,11 +145,11 @@ template <typename T> struct PointCloud {
   struct Point {
     T x, y;
   };
-  std::vector<Point> pts;
+  std::std::vector<Point> pts;
   inline size_t kdtree_get_point_count() const {
     return pts.size();
   } // Must return the number of data points
-  // Returns the distance between the vector "p1[0:size-1]" and the data point
+  // Returns the distance between the std::vector "p1[0:size-1]" and the data point
   // with index "idx_p2" stored in the class:
   inline T kdtree_distance(const T *p1, const size_t idx_p2,
                            size_t /*size*/) const {
@@ -182,7 +179,7 @@ template <typename T> struct PointCloud {
 };
 
 template <typename T>
-void generatePointCloud(PointCloud<T> &point, vector<cv::KeyPoint> keyPoints) {
+void generatePointCloud(PointCloud<T> &point, std::vector<cv::KeyPoint> keyPoints) {
   point.pts.resize(keyPoints.size());
   for (size_t i = 0; i < keyPoints.size(); i++) {
     point.pts[i].x = keyPoints[i].pt.x;
@@ -190,7 +187,7 @@ void generatePointCloud(PointCloud<T> &point, vector<cv::KeyPoint> keyPoints) {
   }
 }
 
-vector<cv::KeyPoint> kdTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
+std::vector<cv::KeyPoint> kdTree(std::vector<cv::KeyPoint> keyPoints, int numRetPoints,
                             float tolerance, int cols, int rows) {
   // several temp expression variables to simplify solution equation
   int exp1 = rows + cols + 2 * numRetPoints;
@@ -208,29 +205,29 @@ vector<cv::KeyPoint> kdTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
   // binary search range initialization with positive solution
   int high = (sol1 > sol2) ? sol1 : sol2;
   int low = floor(sqrt((double)keyPoints.size() / numRetPoints));
-  low = max(1, low);
+  low = std::max(1, low);
 
   PointCloud<int> cloud; // creating k-d tree with keypoints
   generatePointCloud(cloud, keyPoints);
-  typedef KDTreeSingleIndexAdaptor<L2_Simple_Adaptor<int, PointCloud<int>>,
+  typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<int, PointCloud<int>>,
                                    PointCloud<int>, 2>
       my_kd_tree_t;
   my_kd_tree_t index(2, cloud,
-                     KDTreeSingleIndexAdaptorParams(25 /* max leaf */));
+                     nanoflann::KDTreeSingleIndexAdaptorParams(25 /* max leaf */));
   index.buildIndex();
 
   bool complete = false;
   unsigned int K = numRetPoints;
   unsigned int Kmin = round(K - (K * tolerance));
   unsigned int Kmax = round(K + (K * tolerance));
-  vector<int> ResultVec;
+  std::vector<int> ResultVec;
   int radius;
   int prevradius = -1;
 
-  vector<int> result;
+  std::vector<int> result;
   result.reserve(keyPoints.size());
   while (!complete) {
-    vector<bool> Included(keyPoints.size(), true);
+    std::vector<bool> Included(keyPoints.size(), true);
     radius = low + (high - low) / 2;
     if (radius == prevradius ||
         low >
@@ -245,7 +242,7 @@ vector<cv::KeyPoint> kdTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
         Included[i] = false;
         result.push_back(i);
         const int search_radius = static_cast<int>(radius * radius);
-        vector<pair<size_t, int>> ret_matches;
+        std::vector<std::pair<size_t, int>> ret_matches;
         nanoflann::SearchParams params;
         const int query_pt[2] = {(int)keyPoints[i].pt.x,
                                  (int)keyPoints[i].pt.y};
@@ -271,14 +268,14 @@ vector<cv::KeyPoint> kdTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
   }
 
   // retrieve final keypoints
-  vector<cv::KeyPoint> kp;
+  std::vector<cv::KeyPoint> kp;
   for (unsigned int i = 0; i < ResultVec.size(); i++)
     kp.push_back(keyPoints[ResultVec[i]]);
 
   return kp;
 }
 
-vector<cv::KeyPoint> rangeTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
+std::vector<cv::KeyPoint> rangeTree(std::vector<cv::KeyPoint> keyPoints, int numRetPoints,
                                float tolerance, int cols, int rows) {
   // several temp expression variables to simplify solution equation
   int exp1 = rows + cols + 2 * numRetPoints;
@@ -296,7 +293,7 @@ vector<cv::KeyPoint> rangeTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
   // binary search range initialization with positive solution
   int high = (sol1 > sol2) ? sol1 : sol2;
   int low = floor(sqrt((double)keyPoints.size() / numRetPoints));
-  low = max(1, low);
+  low = std::max(1, low);
 
   rangetree<u16, u16> treeANMS(
       keyPoints.size(), keyPoints.size()); // creating range tree with keypoints
@@ -308,14 +305,14 @@ vector<cv::KeyPoint> rangeTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
   unsigned int K = numRetPoints;
   unsigned int Kmin = round(K - (K * tolerance));
   unsigned int Kmax = round(K + (K * tolerance));
-  vector<int> ResultVec;
+  std::vector<int> ResultVec;
   int width;
   int prevwidth = -1;
 
-  vector<int> result;
+  std::vector<int> result;
   result.reserve(keyPoints.size());
   while (!complete) {
-    vector<bool> Included(keyPoints.size(), true);
+    std::vector<bool> Included(keyPoints.size(), true);
     width = low + (high - low) / 2;
     if (width == prevwidth ||
         low > high) { // needed to reassure the same width is not repeated again
@@ -356,14 +353,14 @@ vector<cv::KeyPoint> rangeTree(vector<cv::KeyPoint> keyPoints, int numRetPoints,
     prevwidth = width;
   }
   // retrieve final keypoints
-  vector<cv::KeyPoint> kp;
+  std::vector<cv::KeyPoint> kp;
   for (unsigned int i = 0; i < ResultVec.size(); i++)
     kp.push_back(keyPoints[ResultVec[i]]);
 
   return kp;
 }
 
-vector<cv::KeyPoint> ssc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
+std::vector<cv::KeyPoint> ssc(std::vector<cv::KeyPoint> keyPoints, int numRetPoints,
                          float tolerance, int cols, int rows) {
   // several temp expression variables to simplify solution equation
   int exp1 = rows + cols + 2 * numRetPoints;
@@ -381,18 +378,18 @@ vector<cv::KeyPoint> ssc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
   // binary search range initialization with positive solution
   int high = (sol1 > sol2) ? sol1 : sol2;
   int low = floor(sqrt((double)keyPoints.size() / numRetPoints));
-  low = max(1, low);
+  low = std::max(1, low);
 
   int width;
   int prevWidth = -1;
 
-  vector<int> ResultVec;
+  std::vector<int> ResultVec;
   bool complete = false;
   unsigned int K = numRetPoints;
   unsigned int Kmin = round(K - (K * tolerance));
   unsigned int Kmax = round(K + (K * tolerance));
 
-  vector<int> result;
+  std::vector<int> result;
   result.reserve(keyPoints.size());
   while (!complete) {
     width = low + (high - low) / 2;
@@ -406,8 +403,8 @@ vector<cv::KeyPoint> ssc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
     double c = (double)width / 2.0; // initializing Grid
     int numCellCols = floor(cols / c);
     int numCellRows = floor(rows / c);
-    vector<vector<bool>> coveredVec(numCellRows + 1,
-                                    vector<bool>(numCellCols + 1, false));
+    std::vector<std::vector<bool>> coveredVec(numCellRows + 1,
+                                    std::vector<bool>(numCellCols + 1, false));
 
     for (unsigned int i = 0; i < keyPoints.size(); ++i) {
       int row =
@@ -448,15 +445,15 @@ vector<cv::KeyPoint> ssc(vector<cv::KeyPoint> keyPoints, int numRetPoints,
     prevWidth = width;
   }
   // retrieve final keypoints
-  vector<cv::KeyPoint> kp;
+  std::vector<cv::KeyPoint> kp;
   for (unsigned int i = 0; i < ResultVec.size(); i++)
     kp.push_back(keyPoints[ResultVec[i]]);
 
   return kp;
 }
 
-void VisualizeAll(cv::Mat Image, vector<cv::KeyPoint> keyPoints,
-                  string figureTitle) {
+void VisualizeAll(cv::Mat Image, std::vector<cv::KeyPoint> keyPoints,
+                  std::string figureTitle) {
   cv::Mat resultImg;
   cv::drawKeypoints(Image, keyPoints, resultImg,
                     cv::Scalar(94.0, 206.0, 165.0, 0.0));
